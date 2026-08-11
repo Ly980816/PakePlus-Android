@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>三角洲每日密码</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f4f6fa;
+            min-height: 100vh;
+            padding: 16px 12px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .app {
+            max-width: 500px;
+            width: 100%;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 12px 4px 8px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .header h1 small {
+            font-size: 14px;
+            font-weight: 400;
+            color: #64748b;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .refresh-btn {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 40px;
+            padding: 6px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1e293b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s;
+            user-select: none;
+        }
+        .refresh-btn:active {
+            background: #f1f5f9;
+            transform: scale(0.96);
+        }
+        .refresh-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .refresh-btn.spinning svg {
+            animation: spin 0.8s linear infinite;
+        }
+        .timestamp {
+            font-size: 13px;
+            color: #94a3b8;
+            background: #f1f5f9;
+            padding: 4px 12px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        .status-box {
+            text-align: center;
+            padding: 40px 16px;
+            color: #64748b;
+            font-size: 15px;
+            background: #fff;
+            border-radius: 24px;
+            margin: 12px 0;
+        }
+        .status-box .emoji {
+            font-size: 36px;
+            display: block;
+            margin-bottom: 12px;
+        }
+        .error-box {
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+            border-radius: 16px;
+            padding: 18px 16px;
+            margin: 12px 0;
+            font-size: 14px;
+            text-align: center;
+        }
+        .error-box .retry-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: #b91c1c;
+            font-weight: 600;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .card-list {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            margin-top: 6px;
+        }
+        .password-card {
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+        .card-image {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #eef2f6;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .card-image .img-placeholder {
+            color: #94a3b8;
+            background: #e2e8f0;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-size: 14px;
+        }
+        .card-body {
+            padding: 16px 18px 18px;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .card-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .card-password {
+            font-size: 26px;
+            font-weight: 800;
+            color: #2563eb;
+            background: #eff6ff;
+            padding: 0 14px;
+            border-radius: 40px;
+            line-height: 1.4;
+            letter-spacing: 1px;
+            font-family: 'SF Mono', 'JetBrains Mono', monospace;
+        }
+        .card-location {
+            font-size: 15px;
+            color: #334155;
+            margin-top: 8px;
+            padding-top: 10px;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .card-location .loc-icon {
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .footer {
+            margin-top: 28px;
+            font-size: 13px;
+            color: #cbd5e1;
+            text-align: center;
+            border-top: 1px solid #e9edf2;
+            padding-top: 18px;
+            width: 100%;
+        }
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #0f172a;
+            }
+            .header h1 {
+                color: #f1f5f9;
+            }
+            .header h1 small {
+                color: #94a3b8;
+            }
+            .refresh-btn {
+                background: #1e293b;
+                border-color: #334155;
+                color: #e2e8f0;
+            }
+            .refresh-btn:active {
+                background: #2d3a4f;
+            }
+            .timestamp {
+                background: #1e293b;
+                color: #94a3b8;
+            }
+            .password-card {
+                background: #1e293b;
+                border-color: #334155;
+            }
+            .card-name {
+                color: #f1f5f9;
+            }
+            .card-password {
+                background: #1d3a6b;
+                color: #60a5fa;
+            }
+            .card-location {
+                color: #cbd5e1;
+                border-top-color: #334155;
+            }
+            .card-image {
+                background: #1a2332;
+            }
+            .card-image .img-placeholder {
+                background: #2d3a4f;
+                color: #94a3b8;
+            }
+            .status-box {
+                background: #1e293b;
+                color: #cbd5e1;
+            }
+            .error-box {
+                background: #2d1a1a;
+                color: #fca5a5;
+                border-color: #7f1d1d;
+            }
+            .error-box .retry-link {
+                color: #fca5a5;
+            }
+            .footer {
+                color: #334155;
+                border-top-color: #1e293b;
+            }
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .hidden {
+            display: none !important;
+        }
+        .skeleton-card {
+            background: #fff;
+            border-radius: 24px;
+            border: 1px solid rgba(226, 232, 240, 0.5);
+            overflow: hidden;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        .skeleton-card .skeleton-img {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #e2e8f0;
+        }
+        .skeleton-card .skeleton-body {
+            padding: 16px 18px 18px;
+        }
+        .skeleton-card .skeleton-line {
+            height: 20px;
+            background: #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        .skeleton-card .skeleton-line.short {
+            width: 60%;
+        }
+        .skeleton-card .skeleton-line.long {
+            width: 80%;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        @media (prefers-color-scheme: dark) {
+            .skeleton-card {
+                background: #1e293b;
+                border-color: #334155;
+            }
+            .skeleton-card .skeleton-img {
+                background: #1a2332;
+            }
+            .skeleton-card .skeleton-line {
+                background: #2d3a4f;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app" id="app">
+        <header class="header">
+            <h1>🔐 每日密码 <small>三角洲</small></h1>
+            <div class="header-actions">
+                <button class="refresh-btn" id="refreshBtn" aria-label="刷新密码">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M21 3v6h-6" />
+                        <path d="M3 21v-6h6" />
+                        <path d="M18.364 5.636a9 9 0 1 1-12.728 12.728" />
+                    </svg>
+                    刷新
+                </button>
+                <span class="timestamp" id="timestampDisplay">--:--</span>
+            </div>
+        </header>
+        <div id="contentArea"></div>
+        <div class="footer">数据来源 · 三角洲行动 · 每日更新</div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ---------- 目标 API ----------
+            const TARGET_API = 'https://i.elaina.vin/api/%E4%B8%89%E8%A7%92%E6%B4%B2/%E5%AF%86%E7%A0%81/';
+
+            // ---------- 代理列表（按优先级） ----------
+            const PROXIES = [
+                url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                // 如果以上都不可用，可以尝试直接请求（但可能被 CORS 拦截，作为最后备选）
+                url => url,
+            ];
+
+            const RETRY_DELAY = 2000;
+            const MAX_RETRIES = 2;
+
+            // DOM 引用
+            const contentEl = document.getElementById('contentArea');
+            const timestampEl = document.getElementById('timestampDisplay');
+            const refreshBtn = document.getElementById('refreshBtn');
+
+            let isLoading = false;
+            let retryCount = 0;
+            let abortController = null;
+
+            // ---------- 工具 ----------
+            function formatTimestamp(ts) {
+                if (!ts) return '--:--';
+                try {
+                    const d = new Date(ts);
+                    if (!isNaN(d.getTime())) {
+                        return d.toLocaleString('zh-CN', { hour12: false, year: 'numeric', month: '2-digit',
+                            day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    }
+                } catch (_) {}
+                return ts;
+            }
+
+            function escapeHtml(text) {
+                if (!text) return '';
+                const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+                return String(text).replace(/[&<>"']/g, m => map[m]);
+            }
+
+            // ---------- 渲染 ----------
+            function renderSkeleton() {
+                let html = '<div class="card-list">';
+                for (let i = 0; i < 3; i++) {
+                    html += `
+                        <div class="skeleton-card">
+                            <div class="skeleton-img"></div>
+                            <div class="skeleton-body">
+                                <div class="skeleton-line short"></div>
+                                <div class="skeleton-line long"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+                html += '</div>';
+                contentEl.innerHTML = html;
+            }
+
+            function renderData(data, timestamp) {
+                if (timestamp) timestampEl.textContent = formatTimestamp(timestamp);
+                if (!data || !Array.isArray(data) || data.length === 0) {
+                    contentEl.innerHTML =
+                        `<div class="status-box"><span class="emoji">📭</span>暂无密码数据</div>`;
+                    return;
+                }
+                let cardsHtml = '';
+                for (const item of data) {
+                    const name = item.name || '未知';
+                    const password = item.password || '----';
+                    const location = item.location || '位置未提供';
+                    const image = item.image || '';
+                    let imgHtml = '';
+                    if (image) {
+                        imgHtml = `
+                            <img src="${escapeHtml(image)}" alt="${escapeHtml(name)} 密码地点" loading="lazy"
+                                 onerror="this.style.display='none';this.parentNode.querySelector('.img-placeholder')?.classList.remove('hidden');">
+                            <span class="img-placeholder hidden">🖼️ 加载失败</span>
+                        `;
+                    } else {
+                        imgHtml = `<span class="img-placeholder">📷 暂无图片</span>`;
+                    }
+                    cardsHtml += `
+                        <div class="password-card">
+                            <div class="card-image">${imgHtml}</div>
+                            <div class="card-body">
+                                <div class="card-header">
+                                    <span class="card-name">${escapeHtml(name)}</span>
+                                    <span class="card-password">${escapeHtml(password)}</span>
+                                </div>
+                                <div class="card-location"><span class="loc-icon">📍</span><span>${escapeHtml(location)}</span></div>
+                            </div>
+                        </div>
+                    `;
+                }
+                contentEl.innerHTML = `<div class="card-list">${cardsHtml}</div>`;
+            }
+
+            function showStatus(emoji, message) {
+                contentEl.innerHTML =
+                    `<div class="status-box"><span class="emoji">${emoji}</span>${escapeHtml(message)}</div>`;
+            }
+
+            function showError(message, canRetry = true) {
+                const retryHtml = canRetry ? `<span class="retry-link" id="errorRetryBtn">点击重试</span>` : '';
+                contentEl.innerHTML =
+                    `<div class="error-box">⚠️ ${escapeHtml(message)}${retryHtml ? '<br>' + retryHtml : ''}</div>`;
+                if (canRetry) {
+                    const btn = document.getElementById('errorRetryBtn');
+                    if (btn) btn.addEventListener('click', () => { retryCount = 0;
+                        fetchPasswords(); });
+                }
+            }
+
+            // ---------- 核心请求（遍历代理） ----------
+            async function fetchWithProxy(url, proxyFns) {
+                for (let i = 0; i < proxyFns.length; i++) {
+                    const proxyUrl = proxyFns[i](url);
+                    try {
+                        const response = await fetch(proxyUrl, {
+                            method: 'GET',
+                            headers: { 'Accept': 'application/json' },
+                            signal: abortController?.signal,
+                            cache: 'no-cache',
+                        });
+                        if (!response.ok) continue; // 尝试下一个代理
+                        const text = await response.text();
+                        // 尝试解析 JSON
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            // 如果返回的不是 JSON，继续尝试下一个代理
+                            continue;
+                        }
+                    } catch (_) {
+                        // 网络错误，继续尝试
+                        continue;
+                    }
+                }
+                throw new Error('所有代理均无法获取有效数据');
+            }
+
+            async function fetchPasswords() {
+                if (isLoading) return;
+                isLoading = true;
+                refreshBtn.classList.add('spinning');
+
+                const hasContent = contentEl.children.length > 0;
+                if (!hasContent || retryCount > 0) renderSkeleton();
+                else timestampEl.textContent = '刷新中…';
+
+                if (abortController) abortController.abort();
+                abortController = new AbortController();
+
+                try {
+                    const timeoutId = setTimeout(() => abortController.abort(), 15000);
+                    const json = await fetchWithProxy(TARGET_API, PROXIES);
+                    clearTimeout(timeoutId);
+
+                    // 自适应数据提取
+                    let actualData = json;
+                    let actualTimestamp = json.timestamp;
+                    if (json && typeof json === 'object' && Array.isArray(json.data)) {
+                        actualData = json.data;
+                        actualTimestamp = json.timestamp;
+                    } else if (Array.isArray(json)) {
+                        actualData = json;
+                    } else if (json && Array.isArray(json.result)) {
+                        actualData = json.result;
+                        actualTimestamp = json.timestamp || json.time;
+                    } else if (json && Array.isArray(json.list)) {
+                        actualData = json.list;
+                        actualTimestamp = json.timestamp || json.time;
+                    }
+
+                    if (Array.isArray(actualData) && actualData.length > 0) {
+                        retryCount = 0;
+                        renderData(actualData, actualTimestamp);
+                    } else {
+                        throw new Error('未获取到有效密码数据');
+                    }
+                } catch (error) {
+                    let msg = '加载失败，请检查网络后重试';
+                    if (error.name === 'AbortError') msg = '请求超时，请检查网络后重试';
+                    else if (error.message) msg = error.message;
+
+                    if (retryCount < MAX_RETRIES) {
+                        retryCount++;
+                        showStatus('🔄', `第 ${retryCount} 次重试…`);
+                        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+                        isLoading = false;
+                        refreshBtn.classList.remove('spinning');
+                        await fetchPasswords();
+                        return;
+                    }
+                    showError(msg, true);
+                } finally {
+                    isLoading = false;
+                    refreshBtn.classList.remove('spinning');
+                    abortController = null;
+                }
+            }
+
+            // ---------- 初始化 ----------
+            function init() {
+                renderSkeleton();
+                fetchPasswords();
+                refreshBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    retryCount = 0;
+                    fetchPasswords();
+                });
+            }
+            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+            else init();
+        })();
+    </script>
+</body>
+</html>
